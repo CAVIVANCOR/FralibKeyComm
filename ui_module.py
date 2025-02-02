@@ -5,7 +5,7 @@ import webbrowser
 from pystray import Icon as pystrayIcon, Menu, MenuItem as item
 
 class SerialAppUI:
-    def __init__(self, master, serial_comm, auto_start_manager):
+    def __init__(self, master, serial_comm, auto_start_manager, decimal_separator='.'):
         self.master = master
         self.serial_comm = serial_comm
         self.auto_start_manager = auto_start_manager
@@ -66,14 +66,24 @@ class SerialAppUI:
         self.capture_mode_dropdown = ttk.Combobox(self.frame, textvariable=self.capture_mode_var, values=["Todo", "Números"])
         self.capture_mode_dropdown.grid(row=7, column=1, sticky=(tk.W, tk.E))
 
+        # Nuevo campo para seleccionar el separador decimal
+        self.decimal_separator_label = ttk.Label(self.frame, text="Separador decimal:")
+        self.decimal_separator_label.grid(row=7, column=2, sticky=tk.W)
+        self.decimal_separator_var = tk.StringVar(value=decimal_separator)
+        self.decimal_separator_dropdown = ttk.Combobox(self.frame, textvariable=self.decimal_separator_var, values=['.', ','])
+        self.decimal_separator_dropdown.grid(row=7, column=3, sticky=(tk.W, tk.E))
+
         self.start_button = ttk.Button(self.frame, text="Iniciar", command=self.start_reading)
         self.start_button.grid(row=8, column=0)
+        # Agregar el botón "Cerrar Puerto"
+        self.close_port_button = ttk.Button(self.frame, text="Cerrar Puerto", command=self.close_port_connection)
+        self.close_port_button.grid(row=8, column=1, sticky=tk.W)
 
         self.about_button = ttk.Button(self.frame, text="Desarrollado por", command=self.show_designer_info)
-        self.about_button.grid(row=8, column=1)
+        self.about_button.grid(row=8, column=2)
 
         self.exit_button = ttk.Button(self.frame, text="Salir", command=self.quit_from_tray)
-        self.exit_button.grid(row=8, column=2)
+        self.exit_button.grid(row=8, column=3)
 
         self.auto_start_var = tk.BooleanVar()
         self.auto_start_check = ttk.Checkbutton(self.frame, text="Iniciar automáticamente con Windows",
@@ -101,10 +111,15 @@ class SerialAppUI:
         stop_bit = int(self.stop_bit_var.get())
         terminator = self.terminator_var.get()
         capture_all = self.capture_mode_var.get() == "Todo"
+        decimal_separator = self.decimal_separator_var.get()
 
-        self.serial_comm.start_reading(port_name, baud_rate, parity, length, stop_bit, terminator, capture_all)
+        self.serial_comm.start_reading(port_name, baud_rate, parity, length, stop_bit, terminator, capture_all, decimal_separator)
         self.hide_window()  # Minimize to tray after starting data capture
-
+    def close_port_connection(self):
+        """Cierra la conexión serial si está abierta"""
+        if self.serial_comm.serial_port and self.serial_comm.serial_port.is_open:
+            self.serial_comm.close_port()
+            print("Puerto serial cerrado")
     def show_designer_info(self):
         top = Toplevel(self.master)
         top.title("Desarrollado por")
