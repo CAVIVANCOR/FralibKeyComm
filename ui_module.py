@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 from tkinter import ttk, Toplevel
 from PIL import Image, ImageTk
@@ -13,13 +14,9 @@ class SerialAppUI:
         self.frame = ttk.Frame(self.master, padding="10 10 10 10")
         self.frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-        self.logo_image = Image.open("assets/logoFralib.png")
-        self.original_logo_image = self.logo_image.resize((16, 16), Image.Resampling.LANCZOS)
-        self.logo_photo = ImageTk.PhotoImage(self.logo_image)
-        self.logo_label = ttk.Label(self.frame, image=self.logo_photo, cursor="hand2")
-        self.logo_label.grid(row=0, column=0, columnspan=3)
-        self.logo_url = "https://www.fralib.com/"
-        self.logo_label.bind("<Button-1>", lambda e: webbrowser.open_new(self.logo_url))
+        # Configurar ruta correcta del logo
+        logo_path = self._get_resource_path("./assets/logoFralib.png")
+        self.logo_image=self._load_logo(logo_path)
 
         self.com_label = ttk.Label(self.frame, text="Seleccione el puerto COM:")
         self.com_label.grid(row=1, column=0, sticky=tk.W)
@@ -28,7 +25,7 @@ class SerialAppUI:
         self.com_dropdown.grid(row=1, column=1, sticky=(tk.W, tk.E))
         self.refresh_ports()
 
-        # Serial parameters
+        # Parámetros seriales
         self.baud_rate_label = ttk.Label(self.frame, text="Baud Rate:")
         self.baud_rate_label.grid(row=2, column=0, sticky=tk.W)
         self.baud_rate_var = tk.StringVar(value="9600")
@@ -59,14 +56,14 @@ class SerialAppUI:
         self.terminator_entry = ttk.Entry(self.frame, textvariable=self.terminator_var)
         self.terminator_entry.grid(row=6, column=1, sticky=(tk.W, tk.E))
 
-        # Data capture options
+        # Opciones de captura
         self.capture_mode_label = ttk.Label(self.frame, text="Modo de Captura:")
         self.capture_mode_label.grid(row=7, column=0, sticky=tk.W)
         self.capture_mode_var = tk.StringVar(value="Todo")
         self.capture_mode_dropdown = ttk.Combobox(self.frame, textvariable=self.capture_mode_var, values=["Todo", "Números"])
         self.capture_mode_dropdown.grid(row=7, column=1, sticky=(tk.W, tk.E))
 
-        # Nuevo campo para seleccionar el separador decimal
+        # Campo para seleccionar el separador decimal
         self.decimal_separator_label = ttk.Label(self.frame, text="Separador decimal:")
         self.decimal_separator_label.grid(row=7, column=2, sticky=tk.W)
         self.decimal_separator_var = tk.StringVar(value=decimal_separator)
@@ -75,23 +72,49 @@ class SerialAppUI:
 
         self.start_button = ttk.Button(self.frame, text="Iniciar", command=self.start_reading)
         self.start_button.grid(row=8, column=0)
-        # Agregar el botón "Cerrar Puerto"
         self.close_port_button = ttk.Button(self.frame, text="Cerrar Puerto", command=self.close_port_connection)
         self.close_port_button.grid(row=8, column=1, sticky=tk.W)
 
         self.about_button = ttk.Button(self.frame, text="Desarrollado por", command=self.show_designer_info)
         self.about_button.grid(row=8, column=2)
-
         self.exit_button = ttk.Button(self.frame, text="Salir", command=self.quit_from_tray)
         self.exit_button.grid(row=8, column=3)
 
         self.auto_start_var = tk.BooleanVar()
         self.auto_start_check = ttk.Checkbutton(self.frame, text="Iniciar automáticamente con Windows",
-                                                variable=self.auto_start_var, command=self.toggle_auto_start)
+                                               variable=self.auto_start_var, command=self.toggle_auto_start)
         self.auto_start_check.grid(row=9, column=1, sticky=tk.W)
         self.check_auto_start()
 
         self.master.protocol("WM_DELETE_WINDOW", self.hide_window)
+
+    def _get_resource_path(self, relative_path):
+        """Obtiene la ruta absoluta del recurso"""
+        try:
+            base_path = os.path.dirname(os.path.abspath(__file__))
+            return os.path.join(base_path, relative_path)
+        except Exception as e:
+            print(f"Error al obtener ruta del recurso: {str(e)}")
+            return None
+
+    def _load_logo(self, logo_path):
+        """Carga y muestra el logo"""
+        try:
+            if not logo_path or not os.path.exists(logo_path):
+                raise FileNotFoundError(f"El archivo de logo {logo_path} no existe")
+
+            self.logo_image = Image.open(logo_path)
+            resized_image = self.logo_image.resize((295, 84), Image.Resampling.LANCZOS)
+            self.logo_photo = ImageTk.PhotoImage(resized_image)
+
+            self.logo_label = ttk.Label(self.frame, image=self.logo_photo, cursor="hand2")
+            self.logo_label.grid(row=0, column=0, columnspan=3)
+            self.logo_url = "https://www.fralib.com/"
+            self.logo_label.bind("<Button-1>", lambda e: webbrowser.open_new(self.logo_url))
+            return self.logo_image
+
+        except Exception as e:
+            print(f"Error al cargar el logo: {str(e)}")
 
     def refresh_ports(self):
         ports = self.serial_comm.get_available_ports()
@@ -100,7 +123,6 @@ class SerialAppUI:
             self.com_dropdown.current(0)
 
     def start_reading(self):
-        # Close the port if it's already open
         if self.serial_comm.serial_port and self.serial_comm.serial_port.is_open:
             self.serial_comm.serial_port.close()
 
@@ -114,29 +136,33 @@ class SerialAppUI:
         decimal_separator = self.decimal_separator_var.get()
 
         self.serial_comm.start_reading(port_name, baud_rate, parity, length, stop_bit, terminator, capture_all, decimal_separator)
-        self.hide_window()  # Minimize to tray after starting data capture
+        self.hide_window()
+
     def close_port_connection(self):
-        """Cierra la conexión serial si está abierta"""
         if self.serial_comm.serial_port and self.serial_comm.serial_port.is_open:
             self.serial_comm.close_port()
             print("Puerto serial cerrado")
+
     def show_designer_info(self):
         top = Toplevel(self.master)
         top.title("Desarrollado por")
         top.geometry("300x300")
-        designer_image = Image.open("assets/logo13Cuadrado.png")
-        designer_image.thumbnail((290, 290), Image.Resampling.LANCZOS)
-        designer_photo = ImageTk.PhotoImage(designer_image)
-        designer_label = ttk.Label(top, image=designer_photo, cursor="hand2")
-        designer_label.image = designer_photo
-        designer_label.pack(padx=5, pady=5)
-        designer_url = "https://www.13elfuturohoy.com/"
-        designer_label.bind("<Button-1>", lambda e: webbrowser.open_new(designer_url))
+
+        designer_path = self._get_resource_path("assets/logo13Cuadrado.png")
+        if designer_path and os.path.exists(designer_path):
+            designer_image = Image.open(designer_path)
+            designer_image.thumbnail((290, 290), Image.Resampling.LANCZOS)
+            designer_photo = ImageTk.PhotoImage(designer_image)
+            designer_label = ttk.Label(top, image=designer_photo, cursor="hand2")
+            designer_label.image = designer_photo
+            designer_label.pack(padx=5, pady=5)
+            designer_url = "https://www.13elfuturohoy.com/"
+            designer_label.bind("<Button-1>", lambda e: webbrowser.open_new(designer_url))
 
     def hide_window(self):
         self.master.withdraw()
         menu = Menu(item('Restore', self.show_window), item('Exit', self.quit_from_tray))
-        icon = pystrayIcon("SerialApp", self.original_logo_image, "SerialApp", menu)
+        icon = pystrayIcon("SerialApp", self.logo_image, "SerialApp", menu)
         icon.run()
 
     def show_window(self, icon, item):
