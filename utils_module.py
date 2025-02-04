@@ -114,6 +114,4 @@ class AutoStartManager:
         with open(self.log_file, 'a') as f:
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             f.write(f"[{timestamp}] [{level}] {message}\n")
-
-
             
