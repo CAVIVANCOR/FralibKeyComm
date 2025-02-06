@@ -10,8 +10,8 @@ import os
 import sys
 import win32api
 import win32con
-CLAVE_INSTALACION = "FRALIB949101509"
-CLAVE_PARAMETROS="JULIAN2025"
+from configAccesos import CLAVE_INSTALACION, CLAVE_PARAMETROS
+
 def setup_logging():
     try:
         log_file = os.path.join(os.path.dirname(sys.executable), 'SerialApp_startup.log')
