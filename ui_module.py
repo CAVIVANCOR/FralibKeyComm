@@ -4,6 +4,7 @@ from tkinter import ttk, Toplevel
 from PIL import Image, ImageTk
 import webbrowser
 from pystray import Icon as pystrayIcon, Menu, MenuItem as item
+import json
 
 class SerialAppUI:
     def __init__(self, master, serial_comm, auto_start_manager, decimal_separator='.'):
@@ -18,9 +19,24 @@ class SerialAppUI:
         logo_path = self._get_resource_path("./assets/logoFralib.png")
         self.logo_image=self._load_logo(logo_path)
 
+
+
+
+        self.com_var = tk.StringVar()
+        self.baud_rate_var = tk.StringVar()
+        self.parity_var = tk.StringVar()
+        self.length_var = tk.StringVar()
+        self.stop_bit_var = tk.StringVar()
+        self.terminator_var = tk.StringVar()
+        self.capture_mode_var = tk.StringVar()
+        self.decimal_separator_var = tk.StringVar()
+
+        self.load_config()
+
         self.com_label = ttk.Label(self.frame, text="Seleccione el puerto COM:")
         self.com_label.grid(row=1, column=0, sticky=tk.W)
-        self.com_var = tk.StringVar()
+        if not self.com_var.get():
+            self.com_var = tk.StringVar()
         self.com_dropdown = ttk.Combobox(self.frame, textvariable=self.com_var, state='readonly')
         self.com_dropdown.grid(row=1, column=1, sticky=(tk.W, tk.E))
         self.refresh_ports()
@@ -28,45 +44,52 @@ class SerialAppUI:
         # Parámetros seriales
         self.baud_rate_label = ttk.Label(self.frame, text="Baud Rate:")
         self.baud_rate_label.grid(row=2, column=0, sticky=tk.W)
-        self.baud_rate_var = tk.StringVar(value="9600")
+        if not self.baud_rate_var.get():
+            self.baud_rate_var = tk.StringVar(value="9600")
         self.baud_rate_entry = ttk.Entry(self.frame, textvariable=self.baud_rate_var)
         self.baud_rate_entry.grid(row=2, column=1, sticky=(tk.W, tk.E))
 
         self.parity_label = ttk.Label(self.frame, text="Parity:")
         self.parity_label.grid(row=3, column=0, sticky=tk.W)
-        self.parity_var = tk.StringVar(value="N")
+        if not self.parity_var.get():
+            self.parity_var = tk.StringVar(value="N")
         self.parity_dropdown = ttk.Combobox(self.frame, textvariable=self.parity_var, values=["N", "E", "O"])
         self.parity_dropdown.grid(row=3, column=1, sticky=(tk.W, tk.E))
 
         self.length_label = ttk.Label(self.frame, text="Length:")
         self.length_label.grid(row=4, column=0, sticky=tk.W)
-        self.length_var = tk.StringVar(value="8")
+        if not self.length_var.get():
+            self.length_var = tk.StringVar(value="8")
         self.length_entry = ttk.Entry(self.frame, textvariable=self.length_var)
         self.length_entry.grid(row=4, column=1, sticky=(tk.W, tk.E))
 
         self.stop_bit_label = ttk.Label(self.frame, text="Stop Bit:")
         self.stop_bit_label.grid(row=5, column=0, sticky=tk.W)
-        self.stop_bit_var = tk.StringVar(value="1")
+        if not self.stop_bit_var.get():
+            self.stop_bit_var = tk.StringVar(value="1")
         self.stop_bit_entry = ttk.Entry(self.frame, textvariable=self.stop_bit_var)
         self.stop_bit_entry.grid(row=5, column=1, sticky=(tk.W, tk.E))
 
         self.terminator_label = ttk.Label(self.frame, text="Terminator:")
         self.terminator_label.grid(row=6, column=0, sticky=tk.W)
-        self.terminator_var = tk.StringVar(value="CR")
+        if not self.terminator_var.get():
+            self.terminator_var = tk.StringVar(value="CR")
         self.terminator_entry = ttk.Entry(self.frame, textvariable=self.terminator_var)
         self.terminator_entry.grid(row=6, column=1, sticky=(tk.W, tk.E))
 
         # Opciones de captura
         self.capture_mode_label = ttk.Label(self.frame, text="Modo de Captura:")
         self.capture_mode_label.grid(row=7, column=0, sticky=tk.W)
-        self.capture_mode_var = tk.StringVar(value="Todo")
+        if not self.capture_mode_var.get():
+            self.capture_mode_var = tk.StringVar(value="Todo")
         self.capture_mode_dropdown = ttk.Combobox(self.frame, textvariable=self.capture_mode_var, values=["Todo", "Números"])
         self.capture_mode_dropdown.grid(row=7, column=1, sticky=(tk.W, tk.E))
 
         # Campo para seleccionar el separador decimal
         self.decimal_separator_label = ttk.Label(self.frame, text="Separador decimal:")
         self.decimal_separator_label.grid(row=7, column=2, sticky=tk.W)
-        self.decimal_separator_var = tk.StringVar(value=decimal_separator)
+        if not self.decimal_separator_var.get():
+            self.decimal_separator_var = tk.StringVar(value=decimal_separator)
         self.decimal_separator_dropdown = ttk.Combobox(self.frame, textvariable=self.decimal_separator_var, values=['.', ','])
         self.decimal_separator_dropdown.grid(row=7, column=3, sticky=(tk.W, tk.E))
 
@@ -120,7 +143,8 @@ class SerialAppUI:
         ports = self.serial_comm.get_available_ports()
         self.com_dropdown['values'] = ports if ports else ["No disponible"]
         if ports:
-            self.com_dropdown.current(0)
+            if self.com_var.get() in self.com_dropdown['values']:
+                self.com_dropdown.set(self.com_var.get())
 
     def start_reading(self):
         if self.serial_comm.serial_port and self.serial_comm.serial_port.is_open:
@@ -134,7 +158,7 @@ class SerialAppUI:
         terminator = self.terminator_var.get()
         capture_all = self.capture_mode_var.get() == "Todo"
         decimal_separator = self.decimal_separator_var.get()
-
+        self.save_config()
         self.serial_comm.start_reading(port_name, baud_rate, parity, length, stop_bit, terminator, capture_all, decimal_separator)
         self.hide_window()
 
@@ -179,3 +203,32 @@ class SerialAppUI:
 
     def check_auto_start(self):
         self.auto_start_var.set(self.auto_start_manager.check_auto_start())
+
+    def save_config(self):
+        config = {
+            'com_port': self.com_var.get(),
+            'baud_rate': self.baud_rate_var.get(),
+            'parity': self.parity_var.get(),
+            'length': self.length_var.get(),
+            'stop_bit': self.stop_bit_var.get(),
+            'terminator': self.terminator_var.get(),
+            'capture_mode': self.capture_mode_var.get(),
+            'decimal_separator': self.decimal_separator_var.get()
+        }
+        with open('config.json', 'w') as f:
+            json.dump(config, f)
+
+    def load_config(self):
+        try:
+            with open('config.json', 'r') as f:
+                config = json.load(f)
+                self.com_var.set(config['com_port'])
+                self.baud_rate_var.set(config['baud_rate'])
+                self.parity_var.set(config['parity'])
+                self.length_var.set(config['length'])
+                self.stop_bit_var.set(config['stop_bit'])
+                self.terminator_var.set(config['terminator'])
+                self.capture_mode_var.set(config['capture_mode'])
+                self.decimal_separator_var.set(config['decimal_separator'])
+        except FileNotFoundError:
+            pass

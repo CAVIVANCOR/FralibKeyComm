@@ -10,13 +10,9 @@ import os
 import sys
 import win32api
 import win32con
-
+CLAVE_INSTALACION = "FRALIB949101509"
+CLAVE_PARAMETROS="JULIAN2025"
 def setup_logging():
-    # Configura el sistema de registro (logging) de la aplicación.
-    # Crea un archivo de log en el directorio de ejecución de la aplicación
-    # y configura los parámetros básicos del registro.
-    # Returns:
-    # str: Ruta del archivo de log creado
     try:
         log_file = os.path.join(os.path.dirname(sys.executable), 'SerialApp_startup.log')
         logging.basicConfig(
@@ -32,21 +28,120 @@ def setup_logging():
 def leer_clave_registro():
     try:
         clave = win32api.RegQueryValueEx(win32con.HKEY_CURRENT_USER, "Software\\MiAplicacion\\Clave")
-        return clave[0]
-    except:
+        if clave is not None:
+            return clave[0]
+        else:
+            return None
+    except OSError as e:
+        print(f"Error al leer la clave: {e}")
+        messagebox.showerror("Error", f"Error al leer la clave:{e}")
+        return None
+    except WindowsError as e:
+        print(f"Error al leer la clave: {e}")
+        messagebox.showerror("Error", f"Error al leer la clave:{e}")
+        return None
+    except Exception as e:
+        print(f"Error inesperado: {e}")
+        messagebox.showerror("Error", f"Error inesperado:{e}") 
         return None
 
 def guardar_clave_registro(clave):
-    win32api.RegSetValueEx(win32con.HKEY_CURRENT_USER, "Software\\MiAplicacion\\Clave", 0, win32con.REG_SZ, clave)
+    try:
+        win32api.RegSetValueEx(win32con.HKEY_CURRENT_USER, "Software\\MiAplicacion\\Clave", 0, win32con.REG_SZ, clave)
+        print("La clave se ha guardado correctamente")
+        messagebox.showinfo("Éxito", "La clave se ha guardado correctamente")
+    except OSError as e:
+        print(f"Error al guardar la clave: {e}")
+        messagebox.showerror("Error", "Error al guardar la clave")
+    except WindowsError as e:
+        print(f"Error al guardar la clave: {e}")
+        messagebox.showerror("Error", "Error al guardar la clave")
+    except Exception as e:
+        print(f"Error inesperado: {e}")
+        messagebox.showerror("Error", "Error inesperado")
+
+def borrar_clave_registro():
+    try:
+        # Verifica la existencia de la clave
+        clave = win32api.RegQueryValueEx(win32con.HKEY_CURRENT_USER, "Software\\MiAplicacion\\Clave")
+        if clave is not None:
+            win32api.RegDeleteValue(win32con.HKEY_CURRENT_USER, "Software\\MiAplicacion\\Clave")
+            print("La clave se ha borrado correctamente")
+            messagebox.showinfo("Exito", "La clave se ha borrado correctamente")
+        else:
+            print("La clave no existe")
+            messagebox.showinfo("Información", "La clave no existe")
+    except OSError as e:
+        print(f"Error al borrar la clave: {e}")
+        messagebox.showerror("Error", "Error al borrar la clave")
+    except WindowsError as e:
+        print(f"Error al borrar la clave: {e}")
+        messagebox.showerror("Error", "Error al borrar la clave")
+    except Exception as e:
+        print(f"Error inesperado: {e}")
+        messagebox.showerror("Error", "Error inesperado")
 
 def verificar_clave():
+    clave = None
     clave_guardada = leer_clave_registro()
     if clave_guardada is None:
-        clave = input("Ingrese su clave: ")
-        guardar_clave_registro(clave)
-        return clave
+        # Pide la clave la primera vez
+        root = tk.Tk()
+        root.title("Ingrese su clave")
+        label = tk.Label(root, text="Ingrese su clave:")
+        label.pack()
+        entry = tk.Entry(root, show="*")
+        entry.pack()
+        def comprobar_clave():
+            clave_ingresada = entry.get()
+            if clave_ingresada == CLAVE_INSTALACION:
+                clave = clave_ingresada
+                guardar_clave_registro(clave_ingresada)
+                print("Clave correcta! Se ha grabado en el registro.")
+                root.destroy()
+            else:
+                print("Clave incorrecta. Intente de nuevo.")
+                entry.delete(0, tk.END)
+                
+        button = tk.Button(root, text="Aceptar", command=comprobar_clave)
+        button.pack()
+        root.mainloop()
     else:
-        return clave_guardada
+        # Lee la clave del registro y la compara con la clave fija
+        if clave_guardada == CLAVE_INSTALACION:
+            clave = clave_guardada
+            print("Clave correcta! Acceso permitido.")
+        else:
+            print("Clave NO COINCIDE CON EL REGISTRO. Acceso denegado.")
+            messagebox.showerror("Error", f"Error ACCESO DENEGADO : CLAVE DE INSTALACION NO COINCIDE")
+            # Pide la clave de corrección
+            root = tk.Tk()
+            root.title("FRALIB SAC - MODIFICAR CLAVE INSTALACION")
+            label = tk.Label(root, text="Ingrese la clave para Corregir Parametros:")
+            label.pack()
+            entry = tk.Entry(root, show="*")
+            entry.pack()
+            
+            def corregir_clave():
+                clave_correccion = entry.get()
+                if clave_correccion == CLAVE_PARAMETROS:
+                    # Grabar la clave de instalación en el registro
+                    nonlocal clave
+                    clave = CLAVE_INSTALACION
+                    guardar_clave_registro(CLAVE_INSTALACION)
+                    print("Clave correcta! Se ha grabado en el registro.")
+                    messagebox.showinfo("Exito", "Clave correcta! Se ha grabado en el registro.")
+                    root.destroy()
+                else:
+                    print("Clave de corrección incorrecta. Intente de nuevo.")
+                    entry.delete(0, tk.END)
+
+            button = tk.Button(root, text="Aceptar", command=corregir_clave)
+            button.pack()
+            root.mainloop()
+    return clave
+
+
 
 def verify_available_ports():
     try:
