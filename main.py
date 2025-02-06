@@ -95,6 +95,7 @@ def verificar_clave():
         def comprobar_clave():
             clave_ingresada = entry.get()
             if clave_ingresada == CLAVE_INSTALACION:
+                nonlocal clave
                 clave = clave_ingresada
                 guardar_clave_registro(clave_ingresada)
                 print("Clave correcta! Se ha grabado en el registro.")
