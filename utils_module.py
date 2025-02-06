@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 import win32com.client
 from tkinter import messagebox
-
+from parametros_serial import save_config, load_config
 def setup_logging():
     log_file = os.path.join(os.path.dirname(sys.executable), 'SerialApp_startup.log')
     logging.basicConfig(
@@ -27,11 +27,18 @@ class AutoStartManager:
             format='%(asctime)s - %(levelname)s - %(message)s'
         )
 
-    def toggle_auto_start(self, enable):
+    def _save_auto_start_params(self, params):
+        save_config(params)
+
+    def _load_auto_start_params(self):
+        return load_config()
+    def toggle_auto_start(self, enable, params=None):
         try:
             if enable:
                 self._create_auto_start()
                 self._log_info("Inicio automático habilitado correctamente")
+                if params:
+                    self._save_auto_start_params(params)
                 messagebox.showinfo("Éxito", "La aplicación se configuró correctamente para iniciar automáticamente.")
             else:
                 self._remove_auto_start()

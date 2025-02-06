@@ -6,9 +6,9 @@ import webbrowser
 from pystray import Icon as pystrayIcon, Menu, MenuItem as item
 import json
 from configAccesos import CLAVE_PARAMETROS
-
+from parametros_serial import save_config, load_config
 class SerialAppUI:
-    def __init__(self, master, serial_comm, auto_start_manager, decimal_separator='.'):
+    def __init__(self, master, serial_comm, auto_start_manager, decimal_separator='.', params=None):
         self.master = master
         self.serial_comm = serial_comm
         self.auto_start_manager = auto_start_manager
@@ -244,20 +244,16 @@ class SerialAppUI:
             'capture_mode': self.capture_mode_var.get(),
             'decimal_separator': self.decimal_separator_var.get()
         }
-        with open('config.json', 'w') as f:
-            json.dump(config, f)
+        save_config(config)
 
     def load_config(self):
-        try:
-            with open('config.json', 'r') as f:
-                config = json.load(f)
-                self.com_var.set(config['com_port'])
-                self.baud_rate_var.set(config['baud_rate'])
-                self.parity_var.set(config['parity'])
-                self.length_var.set(config['length'])
-                self.stop_bit_var.set(config['stop_bit'])
-                self.terminator_var.set(config['terminator'])
-                self.capture_mode_var.set(config['capture_mode'])
-                self.decimal_separator_var.set(config['decimal_separator'])
-        except FileNotFoundError:
-            pass
+        config = load_config()
+        if config:
+            self.com_var.set(config['com_port'])
+            self.baud_rate_var.set(config['baud_rate'])
+            self.parity_var.set(config['parity'])
+            self.length_var.set(config['length'])
+            self.stop_bit_var.set(config['stop_bit'])
+            self.terminator_var.set(config['terminator'])
+            self.capture_mode_var.set(config['capture_mode'])
+            self.decimal_separator_var.set(config['decimal_separator'])

@@ -173,11 +173,25 @@ def main(decimal_separator='.'):
         # Inicializar componentes
         serial_comm = SerialCommunication()
         logging.info("Componente SerialCommunication inicializado correctamente")
-        
+
+        # Verificar si se ha habilitado el inicio automático
         auto_start_manager = AutoStartManager()
         logging.info("Componente AutoStartManager inicializado correctamente")
-        
-        app_ui = SerialAppUI(root, serial_comm, auto_start_manager, decimal_separator)
+        if auto_start_manager.check_auto_start():
+            # Cargar los parametros para iniciar la aplicacion de manera automatica
+            params = auto_start_manager._load_auto_start_params()
+            if params:
+                # Iniciar la aplicacion con los parametros correspondientes
+                app_ui = SerialAppUI(root, serial_comm, auto_start_manager, decimal_separator, params)
+                logging.info("Se Inicio la aplicacion con los parametros guardados en el registro")
+            else:
+                # Iniciar la aplicacion de manera normal
+                app_ui = SerialAppUI(root, serial_comm, auto_start_manager, decimal_separator)
+                logging.info("Se Inicio la aplicacion sin los paramtros guardados")
+        else:
+            # Iniciar la aplicacion de manera normal
+            app_ui = SerialAppUI(root, serial_comm, auto_start_manager, decimal_separator)
+            logging.info("Se Inicio la aplicacion sin los paramtros guardados")
         logging.info("Interfaz gráfica inicializada correctamente")
         
         # Verificar puertos disponibles
