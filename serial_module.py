@@ -53,7 +53,8 @@ class SerialCommunication:
             self.read_thread.start()
 
             # Mensaje de éxito
-            messagebox.showinfo("Éxito", f"Puerto {port_name} abierto correctamente")
+            print(f"Puerto {port_name} abierto correctamente")
+            #messagebox.showinfo("Éxito", f"Puerto {port_name} abierto correctamente")
 
         except serial.SerialException as e:
             print(f"Error al abrir el puerto serial: {e}")

@@ -161,7 +161,9 @@ def main(decimal_separator='.'):
         clave = verificar_clave()
         if clave is None:
             return
-
+        # Verificar puertos disponibles
+        verify_available_ports()
+        
         # Inicializar el registro
         log_file = setup_logging()
         logging.info(f"Inicio de la aplicación. Archivo de log: {log_file}")
@@ -199,8 +201,7 @@ def main(decimal_separator='.'):
             logging.info("Se Inicio la aplicacion sin los paramtros guardados")
         logging.info("Interfaz gráfica inicializada correctamente")
         
-        # Verificar puertos disponibles
-        verify_available_ports()
+
         
         # Iniciar bucle principal
         logging.info("Iniciando bucle principal de la aplicación")
