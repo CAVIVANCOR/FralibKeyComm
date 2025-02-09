@@ -39,7 +39,7 @@ class AutoStartManager:
                 self._log_info("Inicio automático habilitado correctamente")
                 if params:
                     self._save_auto_start_params(params)
-                messagebox.showinfo("Éxito", "La aplicación se configuró correctamente para iniciar automáticamente.")
+                # messagebox.showinfo("Éxito", "La aplicación se configuró correctamente para iniciar automáticamente.")
             else:
                 self._remove_auto_start()
                 self._log_info("Inicio automático deshabilitado correctamente")

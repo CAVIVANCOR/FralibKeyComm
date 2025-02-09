@@ -11,7 +11,7 @@ import sys
 import win32api
 import win32con
 from configAccesos import CLAVE_INSTALACION, CLAVE_PARAMETROS
-
+#pyinstaller --noconfirm --windowed --icon=iconoFralib.ico --add-data "assets;assets" --name SerialApp --clean main.py
 def setup_logging():
     try:
         log_file = os.path.join(os.path.dirname(sys.executable), 'SerialApp_startup.log')
@@ -184,6 +184,11 @@ def main(decimal_separator='.'):
                 # Iniciar la aplicacion con los parametros correspondientes
                 app_ui = SerialAppUI(root, serial_comm, auto_start_manager, decimal_separator, params)
                 logging.info("Se Inicio la aplicacion con los parametros guardados en el registro")
+                app_ui.toggle_auto_start()
+                app_ui.start_reading()
+                logging.info("Inicio la lectura del puerto Serial con los datos guardados en el registro")
+                app_ui.hide_window()
+                logging.info("Se minimizo al area de notificaciones")
             else:
                 # Iniciar la aplicacion de manera normal
                 app_ui = SerialAppUI(root, serial_comm, auto_start_manager, decimal_separator)
